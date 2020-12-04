@@ -35,34 +35,26 @@ printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	s_pitch = (cursor->image.width + 7) >> 3;
 	dsize = s_pitch * cursor->image.height;
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	if (dsize + sizeof(struct fb_image) != ops->cursor_size) {
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 		kfree(ops->cursor_src);
 		ops->cursor_size = dsize + sizeof(struct fb_image);
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 		ops->cursor_src = kmalloc(ops->cursor_size, GFP_ATOMIC);
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 		if (!ops->cursor_src) {
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 			ops->cursor_size = 0;
 			return -ENOMEM;
 		}
 	}
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	src = ops->cursor_src + sizeof(struct fb_image);
 	image = (struct fb_image *)ops->cursor_src;
 	*image = cursor->image;
 	d_pitch = (s_pitch + scan_align) & ~scan_align;
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	size = d_pitch * image->height + buf_align;
 	size &= ~buf_align;
 	dst = fb_get_buffer_offset(info, &info->pixmap, size);
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	if (cursor->enable) {
 		switch (cursor->rop) {
 		case ROP_XOR:
@@ -80,8 +72,9 @@ printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 
 printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	fb_pad_aligned_buffer(dst, d_pitch, src, s_pitch, image->height);
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
+printk(KERN_INFO "%s():%d %p %p\n", __FUNCTION__, __LINE__, image, image->data);
 	image->data = dst;
+printk(KERN_INFO "%s():%d %p %p %p %p\n", __FUNCTION__, __LINE__, info, image->data, info->fbops, info->fbops->fb_imageblit);
 	info->fbops->fb_imageblit(info, image);
 printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	return 0;
