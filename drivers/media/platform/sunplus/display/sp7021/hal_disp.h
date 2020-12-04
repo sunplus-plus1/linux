@@ -36,7 +36,7 @@
 /**************************************************************************
  *                           C O N S T A N T S                            *
  **************************************************************************/
-//#define SP_DISP_DEBUG
+#define SP_DISP_DEBUG
 
 #if 0
 #define sp_disp_err(fmt, args...)		printk(KERN_ERR "[DISP][Err][%s:%d]"fmt, __func__, __LINE__, ##args)
