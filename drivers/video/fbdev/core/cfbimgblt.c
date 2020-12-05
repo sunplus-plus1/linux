@@ -273,6 +273,7 @@ void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
 	if (p->state != FBINFO_STATE_RUNNING)
 		return;
 
+printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	bitstart = (dy * p->fix.line_length * 8) + (dx * bpp);
 	start_index = bitstart & (32 - 1);
 	pitch_index = (p->fix.line_length & (bpl - 1)) * 8;
@@ -281,9 +282,11 @@ void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
 	bitstart &= ~(bpl - 1);
 	dst1 = p->screen_base + bitstart;
 
+printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	if (p->fbops->fb_sync)
 		p->fbops->fb_sync(p);
 
+printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	if (image->depth == 1) {
 		if (p->fix.visual == FB_VISUAL_TRUECOLOR ||
 		    p->fix.visual == FB_VISUAL_DIRECTCOLOR) {
@@ -294,6 +297,7 @@ void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
 			bgcolor = image->bg_color;
 		}	
 		
+printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 		if (32 % bpp == 0 && !start_index && !pitch_index && 
 		    ((width & (32/bpp-1)) == 0) &&
 		    bpp >= 8 && bpp <= 32) 			
@@ -302,6 +306,7 @@ void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
 			slow_imageblit(image, p, dst1, fgcolor, bgcolor,
 					start_index, pitch_index);
 	} else
+printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 		color_imageblit(image, p, dst1, start_index, pitch_index);
 }
 
