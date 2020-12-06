@@ -31,7 +31,6 @@ int soft_cursor(struct fb_info *info, struct fb_cursor *cursor)
 	if (info->state != FBINFO_STATE_RUNNING)
 		return 0;
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	s_pitch = (cursor->image.width + 7) >> 3;
 	dsize = s_pitch * cursor->image.height;
 
@@ -70,13 +69,9 @@ printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	} else
 		memcpy(src, image->data, dsize);
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	fb_pad_aligned_buffer(dst, d_pitch, src, s_pitch, image->height);
-printk(KERN_INFO "%s():%d %p %p\n", __FUNCTION__, __LINE__, image, image->data);
 	image->data = dst;
-printk(KERN_INFO "%s():%d %p %p %p %p\n", __FUNCTION__, __LINE__, info, image->data, info->fbops, info->fbops->fb_imageblit);
 	info->fbops->fb_imageblit(info, image);
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	return 0;
 }
 
