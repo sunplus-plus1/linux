@@ -286,10 +286,13 @@ printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
 	if (p->fbops->fb_sync)
 		p->fbops->fb_sync(p);
 
-printk(KERN_INFO "%s():%d\n", __FUNCTION__, __LINE__);
+printk(KERN_INFO "%s():%d image->depth:%d\n", __FUNCTION__, __LINE__, image->depth);
 	if (image->depth == 1) {
+printk(KERN_INFO "%s():%d fix.visual:%d\n", __FUNCTION__, __LINE__, p->fix.visual);
 		if (p->fix.visual == FB_VISUAL_TRUECOLOR ||
 		    p->fix.visual == FB_VISUAL_DIRECTCOLOR) {
+printk(KERN_INFO "%s():%d image->fg_color:%d\n", __FUNCTION__, __LINE__, image->fg_color);
+printk(KERN_INFO "%s():%d p->pseudo_palette:%p\n", __FUNCTION__, __LINE__, p->pseudo_palette);
 			fgcolor = ((u32*)(p->pseudo_palette))[image->fg_color];
 			bgcolor = ((u32*)(p->pseudo_palette))[image->bg_color];
 		} else {
