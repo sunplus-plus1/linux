@@ -169,6 +169,7 @@ static int _sp7021_fb_create_device(struct platform_device *pdev,
 	/* Allocate Buffer */
 	fbWorkMem->fbmem = (void __iomem *)dma_alloc_coherent(&pdev->dev,
 			fbWorkMem->fbsize, &fb_phymem, GFP_KERNEL | __GFP_ZERO);
+printk(KERN_INFO "%s():%d fbsize:%d\n", __FUNCTION__, __LINE__, fbWorkMem->fbsize);
 
 	if (!fbWorkMem->fbmem) {
 		mod_err(pdev, "malloc failed, size %d(%dx%dx(%d/8)*%d)\n",
@@ -181,6 +182,7 @@ static int _sp7021_fb_create_device(struct platform_device *pdev,
 	}
 
 	if (fbWorkMem->ColorFmt == DRV_OSD_REGION_FORMAT_8BPP) {
+printk(KERN_INFO "%s():%d FB_PALETTE_LEN:%d\n", __FUNCTION__, __LINE__, FB_PALETTE_LEN);
 		fbWorkMem->fbmem_palette = kzalloc(FB_PALETTE_LEN, GFP_KERNEL);
 
 		if (fbWorkMem->fbmem_palette == NULL)
@@ -191,6 +193,7 @@ static int _sp7021_fb_create_device(struct platform_device *pdev,
 	fbinfo->fbops = &framebuffer_ops;
 	fbinfo->flags = FBINFO_FLAG_DEFAULT;
 
+printk(KERN_INFO "%s():%d xxx:%d\n", __FUNCTION__, __LINE__, ( fbWorkMem->ColorFmt == DRV_OSD_REGION_FORMAT_8BPP));
 	if (fbWorkMem->ColorFmt == DRV_OSD_REGION_FORMAT_8BPP)
 		fbinfo->pseudo_palette = fbWorkMem->fbmem_palette;
 	else
