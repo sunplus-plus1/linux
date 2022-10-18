@@ -30,23 +30,23 @@
 
 struct intG0Reg_st {
 	/* Interrupt G0 */
-	u32 intr_type[7];
-	u32 intr_polarity[7];
-	u32 priority[7];
-	u32 intr_mask[7];
-	u32 g15_reserved_0[4];
+	volatile unsigned int intr_type[7];
+	volatile unsigned int intr_polarity[7];
+	volatile unsigned int priority[7];
+	volatile unsigned int intr_mask[7];
+	volatile unsigned int g15_reserved_0[4];
 };
 
 struct intG1Reg_st {
 	/* Interrupt G1 */
-	u32 intr_clr[7];
-	u32 masked_fiqs[7];
-	u32 masked_irqs[7];
-	u32 g21_reserved_0[10];
+	volatile unsigned int intr_clr[7];
+	volatile unsigned int masked_fiqs[7];
+	volatile unsigned int masked_irqs[7];
+	volatile unsigned int g21_reserved_0[10];
 #ifdef SUPPORT_IRQ_GRP_REG
-	u32 intr_group;
+	volatile unsigned int intr_group;
 #else
-	u32 rsvd_31;
+	volatile unsigned int rsvd_31;
 #endif
 };
 
@@ -98,12 +98,11 @@ static void sp_intc_ack_irq(struct irq_data *data)
 #ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
 	if (edge_trigger[data->hwirq] & IRQ_TYPE_EDGE_BOTH) {
 		u32 trig_lvl = readl_relaxed(&sp_intc.g0->intr_polarity[idx]);
-// FIX ?
-		if (edge_trigger[data->hwirq] == IRQ_TYPE_EDGE_RISING)
+		if (edge_trigger[data->hwirq] == IRQ_TYPE_EDGE_RISING) {
 			trig_lvl |= mask;
-		else
+		} else {
 			trig_lvl &= ~mask;
-
+		}
 		writel_relaxed(trig_lvl, &sp_intc.g0->intr_polarity[idx]);
 		edge_trigger[data->hwirq] |= SP_IRQ_TYPE_EDGE_ACTIVE;
 	}
@@ -149,7 +148,7 @@ static void sp_intc_unmask_irq(struct irq_data *data)
 
 static int sp_intc_set_type(struct irq_data *data, unsigned int flow_type)
 {
-	u32 idx, mask, pol, et;
+	u32 idx, mask;
 	u32 edge_type; /* 0=level, 1=edge */
 	u32 trig_lvl;  /* 0=high, 1=low */
 	unsigned long flags;
@@ -167,46 +166,76 @@ static int sp_intc_set_type(struct irq_data *data, unsigned int flow_type)
 		irq_set_chip_handler_name_locked(data, &sp_intc_chip,
 						   handle_edge_irq, NULL);
 
-	edge_trigger[data->hwirq] = IRQ_TYPE_NONE;
-
-	switch (flow_type) {
-	case IRQ_TYPE_EDGE_RISING:
-	case IRQ_TYPE_EDGE_FALLING:
-	case IRQ_TYPE_EDGE_BOTH:
-		edge_trigger[data->hwirq] = flow_type;
-		break;
-	case IRQ_TYPE_LEVEL_HIGH:
-	case IRQ_TYPE_LEVEL_LOW:
-		break;
-	default:
-		pr_err("%s: type=%d\n", __func__, flow_type);
-		return -EBADR;
-	}
-
 	idx = data->hwirq / 32;
 
 	spin_lock_irqsave(&sp_intc.lock, flags);
 
 	edge_type = readl_relaxed(&sp_intc.g0->intr_type[idx]);
 	trig_lvl = readl_relaxed(&sp_intc.g0->intr_polarity[idx]);
-	mask = BIT(data->hwirq % 32);
+	mask = (1 << (data->hwirq % 32));
 
-	pol = (trig_lvl | mask);
-	if ( flow_type == IRQ_TYPE_LEVEL_HIGH) pol = (trig_lvl & ~mask);
-	if ( flow_type == IRQ_TYPE_EDGE_RISING) pol = (trig_lvl & ~mask);
-
-	if ( flow_type & IRQ_TYPE_EDGE_BOTH) {
-		et = (edge_type | mask);
+	switch (flow_type) {
+	case IRQ_TYPE_EDGE_RISING:
 #ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
 		if ((data->hwirq >= HW_IRQ_GPIO_INT0) && (data->hwirq <= HW_IRQ_GPIO_INT7)) {
-			et = (edge_type & ~mask);
+			edge_trigger[data->hwirq] = IRQ_TYPE_EDGE_RISING;
+			writel_relaxed((edge_type & ~mask), &sp_intc.g0->intr_type[idx]);
+		} else {
+			writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
 		}
+#else
+		writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
 #endif
-	} else {
-		et = (edge_type & ~mask);
+		writel_relaxed((trig_lvl & ~mask), &sp_intc.g0->intr_polarity[idx]);
+		break;
+	case IRQ_TYPE_EDGE_FALLING:
+#ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
+		if ((data->hwirq >= HW_IRQ_GPIO_INT0) && (data->hwirq <= HW_IRQ_GPIO_INT7)) {
+			edge_trigger[data->hwirq] = IRQ_TYPE_EDGE_FALLING;
+			writel_relaxed((edge_type & ~mask), &sp_intc.g0->intr_type[idx]);
+		} else {
+			writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
+		}
+#else
+		writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
+#endif
+		writel_relaxed((trig_lvl | mask), &sp_intc.g0->intr_polarity[idx]);
+		break;
+	case IRQ_TYPE_EDGE_BOTH:
+#ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
+		if ((data->hwirq >= HW_IRQ_GPIO_INT0) && (data->hwirq <= HW_IRQ_GPIO_INT7)) {
+			edge_trigger[data->hwirq] = IRQ_TYPE_EDGE_FALLING;
+			writel_relaxed((edge_type & ~mask), &sp_intc.g0->intr_type[idx]);
+		} else {
+			writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
+		}
+#else
+		writel_relaxed((edge_type | mask), &sp_intc.g0->intr_type[idx]);
+#endif
+		writel_relaxed((trig_lvl | mask), &sp_intc.g0->intr_polarity[idx]);
+		break;
+	case IRQ_TYPE_LEVEL_HIGH:
+#ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
+		edge_trigger[data->hwirq] = IRQ_TYPE_NONE;
+#endif
+		writel_relaxed((edge_type & ~mask), &sp_intc.g0->intr_type[idx]);
+		writel_relaxed((trig_lvl & ~mask), &sp_intc.g0->intr_polarity[idx]);
+		break;
+	case IRQ_TYPE_LEVEL_LOW:
+#ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
+		edge_trigger[data->hwirq] = IRQ_TYPE_NONE;
+#endif
+		writel_relaxed((edge_type & ~mask), &sp_intc.g0->intr_type[idx]);
+		writel_relaxed((trig_lvl | mask), &sp_intc.g0->intr_polarity[idx]);
+		break;
+	default:
+#ifdef WORKAROUND_FOR_EDGE_TRIGGER_BUG
+		edge_trigger[data->hwirq] = IRQ_TYPE_NONE;
+#endif
+		spin_unlock_irqrestore(&sp_intc.lock, flags);
+		pr_err("%s: type=%d\n", __func__, flow_type);
+		return -EBADR;
 	}
-	writel_relaxed( et, &sp_intc.g0->intr_type[idx]);
-	writel_relaxed( pol, &sp_intc.g0->intr_polarity[idx]);
 
 	spin_unlock_irqrestore(&sp_intc.lock, flags);
 
@@ -295,17 +324,15 @@ static void sp_intc_handle_ext0_cascaded(struct irq_desc *desc)
 			u32 mask = BIT(hwirq % 32);
 
 			edge_trigger[hwirq] &= ~SP_IRQ_TYPE_EDGE_ACTIVE;
-			if (edge_trigger[hwirq] == IRQ_TYPE_EDGE_RISING)
+			if (edge_trigger[hwirq] == IRQ_TYPE_EDGE_RISING) {
 				trig_lvl &= ~mask;
-			else
+			} else {
 				trig_lvl |= mask;
-
+			}
 			writel_relaxed(trig_lvl, &sp_intc.g0->intr_polarity[idx]);
 		} else
-			generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
-#else
-		generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
 #endif
+		generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
 	}
 
 	chained_irq_exit(host_chip, desc);
@@ -326,17 +353,15 @@ static void sp_intc_handle_ext1_cascaded(struct irq_desc *desc)
 			u32 mask = BIT(hwirq % 32);
 
 			edge_trigger[hwirq] &= ~SP_IRQ_TYPE_EDGE_ACTIVE;
-			if (edge_trigger[hwirq] == IRQ_TYPE_EDGE_RISING)
+			if (edge_trigger[hwirq] == IRQ_TYPE_EDGE_RISING) {
 				trig_lvl &= ~mask;
-			else
+			} else {
 				trig_lvl |= mask;
-
+			}
 			writel_relaxed(trig_lvl, &sp_intc.g0->intr_polarity[idx]);
 		} else
-			generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
-#else
-		generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
 #endif
+		generic_handle_irq(irq_find_mapping(sp_intc.domain, (unsigned int)hwirq));
 	}
 
 	chained_irq_exit(host_chip, desc);
@@ -430,12 +455,12 @@ int sp_intc_xlate_of(struct irq_domain *d, struct device_node *node,
 	ext_num = (intspec[1] & SP_INTC_EXT_INT_MASK) >> SP_INTC_EXT_INT_SHFIT;
 
 	/* set ext_int1 to high priority */
-	if (ext_num != 1)
+	if (ext_num != 1) {
 		ext_num = 0;
-
-	if (ext_num)
+	}
+	if (ext_num) {
 		sp_intc_set_prio(*out_hwirq, 0); /* priority=0 */
-
+	}
 	return ret;
 }
 
