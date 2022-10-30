@@ -105,7 +105,7 @@ static irqreturn_t sp7021_spi_slave_irq(int irq, void *dev)
 
 	data_status = readl(pspim->s_base + SP7021_DATA_RDY_REG);
 	data_status |= SP7021_SLAVE_CLR_INT;
-	writel(data_status , pspim->s_base + SP7021_DATA_RDY_REG);
+	writel(data_status, pspim->s_base + SP7021_DATA_RDY_REG);
 	complete(&pspim->slave_isr);
 	return IRQ_HANDLED;
 }
