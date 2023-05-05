@@ -96,8 +96,8 @@ static int sp_wdt_ping(struct watchdog_device *wdev)
 {
 	struct sp_wdt_priv *priv = watchdog_get_drvdata(wdev);
 	void __iomem *base = priv->base;
-	void __iomem *base_rst = priv->base_rst;
 #ifdef CONFIG_SOC_SP7350
+	void __iomem *base_rst = priv->base_rst;
 	u32 count_f;
 	u32 count_b;
 	u32 time_f;
