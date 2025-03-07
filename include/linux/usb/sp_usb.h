@@ -103,6 +103,9 @@ extern int uphy0_irq_num;
 extern int uphy1_irq_num;
 extern void __iomem *uphy0_base_addr;
 extern void __iomem *uphy1_base_addr;
+extern void __iomem *uphy0_res_moon4;
+extern void __iomem *uphy1_res_moon4;
+
 #if 0
 extern u32 usb_vbus_gpio[USB_PORT_NUM];
 #endif
